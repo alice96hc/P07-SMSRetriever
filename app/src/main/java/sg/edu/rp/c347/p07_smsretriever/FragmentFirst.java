@@ -2,18 +2,26 @@ package sg.edu.rp.c347.p07_smsretriever;
 
 
 import android.Manifest;
+import android.content.ContentResolver;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.PermissionChecker;
+import android.text.format.DateFormat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.w3c.dom.Text;
+
+import static android.widget.Toast.LENGTH_SHORT;
 
 
 /**
@@ -22,8 +30,8 @@ import org.w3c.dom.Text;
 public class FragmentFirst extends Fragment {
     TextView textViewSMS;
     EditText etNumber;
-    Button btnRetrieve1;
-    TextView tv;
+    TextView tvSMS;
+    Button btnRetrieve;
 
 
     public FragmentFirst() {
@@ -35,9 +43,88 @@ public class FragmentFirst extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_first, container, false);
+
         textViewSMS = (TextView) view.findViewById(R.id.textViewSMS);
         etNumber = (EditText) view.findViewById(R.id.etNumber);
+        tvSMS = (TextView) view.findViewById(R.id.tvSMS);
+        btnRetrieve = (Button) view.findViewById(R.id.btnRetrieve);
 
         return view;
+
+        btnRetrieve.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int permissionCheck = PermissionChecker.checkSelfPermission(FragmentFirst.this, Manifest.permission.READ_SMS);
+                if (permissionCheck != PermissionChecker.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(FragmentFirst.this, new String[]{Manifest.permission.READ_SMS}, 0);
+                    //stop the action from proceeding further as permission not granted yet
+                    return;
+                }
+
+                //create all message URI
+                Uri uri = Uri.parse("content://sms");
+                //the columns we want
+                //date is when the message took place
+                //address is the number of the other party
+                //body is the message content
+                //type 1 is received, type 2 sent
+                String[] reqCols = new String[]{"date", "address", "body", "type", "time"};
+
+                //get content Resolver object from which to
+                //query the content provider
+                ContentResolver cr = getActivity().getContentResolver();
+
+                //the filter string
+                String filter = "address LIKE ?";
+                //the matches for the ?
+                String[] filterArgs = {"" + "%" + textViewSMS + "%"};
+
+                //fetch SMS message from built-in content provider
+                Cursor cursor = cr.query(uri, reqCols, null, null, null);
+
+                String smsBody = "";
+                if (cursor.moveToFirst()) {
+                    do {
+                        long dateInMillis = cursor.getLong(0);
+                        String date = (String) DateFormat.format("dd MMM yyyy h:mm:ss aa", dateInMillis);
+                        String address = cursor.getString(1);
+                        String body = cursor.getString(2);
+                        String type = cursor.getString(3);
+                        if (type.equalsIgnoreCase("1")) {
+                            type = "Inbox:";
+                        } else {
+                            type = "at ";
+                        }
+                        smsBody += type + " " + address + "\n at " + date + "\n\"" + body + "\"\n\n";
+
+                    } while (cursor.moveToNext());
+                }
+                tvSMS.setText(smsBody);
+            }
+
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+
+        switch (requestCode) {
+            case 0: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the read SMS
+                    //  as if the btnRetrieve is clicked
+                    btnRetrieve.performClick();
+
+                } else {
+                    // permission denied... notify user
+                    Toast.makeText(FragmentFirst.this, "Permission not granted",
+                            LENGTH_SHORT).show();
+                }
+            }
+        }
     }
 }
