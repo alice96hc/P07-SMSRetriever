@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.PermissionChecker;
 import android.text.format.DateFormat;
 import android.view.LayoutInflater;
@@ -42,6 +43,7 @@ public class FragmentFirst extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.fragment_first, container, false);
 
         textViewSMS = (TextView) view.findViewById(R.id.textViewSMS);
@@ -49,14 +51,12 @@ public class FragmentFirst extends Fragment {
         tvSMS = (TextView) view.findViewById(R.id.tvSMS);
         btnRetrieve = (Button) view.findViewById(R.id.btnRetrieve);
 
-        return view;
-
         btnRetrieve.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int permissionCheck = PermissionChecker.checkSelfPermission(FragmentFirst.this, Manifest.permission.READ_SMS);
-                if (permissionCheck != PermissionChecker.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(FragmentFirst.this, new String[]{Manifest.permission.READ_SMS}, 0);
+                //int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS);
+                if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.READ_SMS}, 0);
                     //stop the action from proceeding further as permission not granted yet
                     return;
                 }
@@ -121,7 +121,7 @@ public class FragmentFirst extends Fragment {
 
                 } else {
                     // permission denied... notify user
-                    Toast.makeText(FragmentFirst.this, "Permission not granted",
+                    Toast.makeText(getActivity(), "Permission not granted",
                             LENGTH_SHORT).show();
                 }
             }

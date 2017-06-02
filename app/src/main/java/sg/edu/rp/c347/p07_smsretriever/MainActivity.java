@@ -41,5 +41,11 @@ public class MainActivity extends AppCompatActivity {
 
         ft.commit();
 
+        int permissionCheck = PermissionChecker.checkSelfPermission(MainActivity.this, Manifest.permission.READ_SMS);
+        if (permissionCheck != PermissionChecker.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_SMS}, 0);
+            //stop the action from proceeding further as permission not granted yet
+            return;
+        }
     }
 }
